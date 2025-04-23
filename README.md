@@ -1,2 +1,2 @@
 # DVWA-sec
-deploiement de DVWA avec github actions avec intégration d'analyses SAST(SonarQube), SCA &amp; container scanning ( Trivy ) et DAST ( OWASP ZAP)
+Déploiement de DVWA avec github actions et intégration d'analyses SAST(SonarQube), SCA & container scanning ( Trivy ) et DAST ( OWASP ZAP)
