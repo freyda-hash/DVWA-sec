@@ -1,0 +1,8 @@
+# Docker
+db_data/
+
+# GitHub Actions artifacts
+.github/reports/
+
+# Local env
+.env

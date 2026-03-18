@@ -1,0 +1,61 @@
+name: "Security CI"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start DVWA stack
+        run: |
+          docker-compose up -d
+          # Wait for DVWA to be reachable
+          for i in {1..30}; do
+            if curl --silent --fail http://localhost/ >/dev/null 2>&1; then
+              echo "DVWA is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "DVWA did not become ready in time" >&2
+          docker-compose logs
+          exit 1
+
+      - name: Run container scan (Trivy)
+        run: |
+          mkdir -p .github/reports/trivy
+          bash ./scripts/run-trivy.sh .github/reports/trivy/trivy-report.json
+        env:
+          TRIVY_SEVERITY: "HIGH,CRITICAL"
+
+      - name: Run DAST scan (OWASP ZAP)
+        run: |
+          mkdir -p .github/reports/zap
+          bash ./scripts/run-zap.sh .github/reports/zap/zap-report.html
+
+      - name: Run SAST scan (SonarQube)
+        if: ${{ secrets.SONAR_TOKEN != '' }}
+        run: |
+          mkdir -p .github/reports/sonar
+          bash ./scripts/run-sonar.sh .github/reports/sonar/sonar-report.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY || 'dvwa-sec' }}
+          SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION || '' }}
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: .github/reports
+
+      - name: Tear down DVWA stack
+        if: always()
+        run: docker-compose down -v
