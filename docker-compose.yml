@@ -5,10 +5,10 @@ services:
     image: mysql:5.7
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: {MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: {MYSQL_DATABASE}
-      MYSQL_USER: {MYSQL_USER}
-      MYSQL_PASSWORD: {MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
 
@@ -20,11 +20,12 @@ services:
     ports:
       - "80:80"
     environment:
-      MYSQL_HOST: db
-      MYSQL_USER: {MYSQL_USER}
-      MYSQL_PASSWORD: {MYSQL_PASSWORD}
-      MYSQL_DATABASE: {MYSQL_DATABASE}
-
+      MYSQL_HOST: ${DB_HOST}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+  
+  
 volumes:
   db_data:
     name: dvwa_mysql_data
