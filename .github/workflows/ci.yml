@@ -1,0 +1,90 @@
+name: CI
+
+on: 
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+jobs:
+
+  validate: ## pour valider la syntaxe des fichiers de configuration et la validité du docker-compose
+    name: Validate repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate YAML files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          yamllint_config: .yamllint.yml
+          yamllint_files: "**/*.yml"
+      
+      - name: Validate Docker Compose file
+        run: docker-compose -f docker-compose.yml config -q
+
+  sast: ## pour analyser le code source à la recherche de vulnérabilités
+    name: sonarqube scan
+    runs-on: ubuntu-latest
+    needs: validate
+    steps: 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run SonarQube scan
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL  }}
+      - name: Check SonarQube quality gate
+        uses: sonarsource/sonarcloud-quality-gate-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL  }}
+     
+  
+  trivy: ## pour scanner les images à la recherche de vulnérabilités
+    name: Trivy scan image
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "image"
+          image-ref: "vulnerables/web-dvwa:1.9"
+          format: "json"
+          output: "trivy-report.json"
+          severity: "HIGH,CRITICAL"
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+
+  sbom:  ##pour lister les dépendances d'une image 
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM with trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "sbom"
+          image-ref: "vulnerables/web-dvwa:1.9"
+          format: "cyclonedx"
+          output: "sbom.json"
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+
+  
