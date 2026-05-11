@@ -1,0 +1,36 @@
+name: deploy DVWA 
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy-scan-dast:
+    name: Deploy DVWA et Run OWASP ZAP scan
+    runs-on: ubuntu-latest
+    needs: [validate, sast, trivy]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy DVWA with Docker Compose
+        run: docker-compose -f docker-compose.yml up -d
+
+      - name: Run OWASP ZAP scan
+        uses: zaproxy/action-full-scan@v0.3.0
+        with:
+          target: "http://localhost:80"
+          docker-compose-file: "docker-compose.yml"
+      
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-report
+
+    
