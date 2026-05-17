@@ -32,11 +32,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run SonarQube scan
-        uses: sonarsource/sonarcloud-github-action@v8.0.0
+        uses: sonarsource/sonarcloud-github-action@v5.0.0
         env:
           SONAR_TOKEN: ${{ secrets.TOKEN }}
       - name: Check SonarQube quality gate
-        uses: sonarsource/sonarcloud-quality-gate-action@v8.0.0
+        uses: sonarsource/sonarqube-quality-gate-action@v1.2.0
         env:
           SONAR_TOKEN: ${{ secrets.TOKEN }}
   
