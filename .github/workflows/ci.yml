@@ -56,6 +56,8 @@ jobs:
           format: "json"
           output: "trivy-report.json"
           severity: "HIGH,CRITICAL"
+          exit-code: 1
+
       - name: Upload Trivy report
         uses: actions/upload-artifact@v7.0.1
         with:
